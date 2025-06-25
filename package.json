@@ -9,16 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@/components/ui/badge": "file:components/ui/badge",
-    "@/components/ui/button": "file:components/ui/button",
-    "@/components/ui/card": "file:components/ui/card",
-    "@/components/ui/input": "file:components/ui/input",
-    "@/components/ui/label": "file:components/ui/label",
-    "@/components/ui/select": "file:components/ui/select",
-    "@/components/ui/separator": "file:components/ui/separator",
-    "@/components/ui/sheet": "file:components/ui/sheet",
-    "@/components/ui/table": "file:components/ui/table",
-    "@/components/ui/textarea": "file:components/ui/textarea",
     "@headlessui/react": "^2.1.8",
     "@heroicons/react": "^2.1.5",
     "@radix-ui/react-icons": "^1.3.0",
