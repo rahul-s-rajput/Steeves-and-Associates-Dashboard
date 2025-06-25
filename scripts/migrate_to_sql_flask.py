@@ -14,8 +14,13 @@ import time
 import logging
 from dotenv import load_dotenv
 
+# Define paths relative to this script
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+DOTENV_PATH = os.path.join(PROJECT_ROOT, 'dashboard-api', '.env')
+
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(dotenv_path=DOTENV_PATH)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -31,7 +36,7 @@ DB_CONFIG = {
 }
 
 # Paths
-CSV_FILE_PATH = 'dashboard-api/output_file_1.csv'
+CSV_FILE_PATH = os.path.join(PROJECT_ROOT, 'dashboard-api', 'output_file_1.csv')
 
 def get_db_connection():
     """Get database connection"""
