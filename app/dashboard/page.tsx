@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { ArrowUpRight } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { TrendingUp, Calendar, BarChart3, Users, Zap, DollarSign } from "lucide-react"
 import DashboardLayout from "../components/layout/DashboardLayout"
 import { useDashboard } from "../context/DashboardContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
 import {
   BarChart,
   Bar,
@@ -17,498 +16,528 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
+  ComposedChart,
+  Area,
 } from "recharts"
 
 // Colors for charts
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"]
+const FORECAST_COLOR = "#10b981"
+const ACTUAL_COLOR = "#3b82f6"
+const FITTED_COLOR = "#f59e0b"
 
-// University short names mapping
-const UNIVERSITY_SHORT_NAMES: Record<string, string> = {
-  "university of british columbia": "UBC",
-  "the university of british columbia": "UBC",
-  "university of victoria": "UVic",
-  "simon fraser university": "SFU"
-};
+// Professional colors for business charts
+const PROFESSIONAL_BLUE = "#374151"
+const PROFESSIONAL_SLATE = "#64748b"
 
-// Helper function to get university short name
-const getUniversityShortName = (university: string): string => {
-  const normalizedName = university.toLowerCase().trim().replace(/^the\s+/, '');
-  return UNIVERSITY_SHORT_NAMES[normalizedName] || university;
-};
-
-export default function Dashboard() {
+export default function DashboardOverviewPage() {
   const {
-    selectedUniversities,
-    setSelectedUniversities,
-    selectedYears,
-    setSelectedYears,
-    universities,
-    years,
-    kpis,
     formatCurrency,
     formatNumber,
-    processedFinancialData,
-    filteredFinancialData,
-    processedEnrollmentData,
-    filteredEnrollmentData
+    selectedCustomers,
+    setSelectedCustomers,
+    selectedProjects,
+    setSelectedProjects,
+    selectedResources,
+    setSelectedResources,
+    selectedDateRange,
+    customers,
+    projects,
+    resources,
+    loading: contextLoading
   } = useDashboard()
 
-  // Custom tooltip styles
-  const CustomTooltipStyle = {
-    backgroundColor: "white",
-    padding: "10px",
-    border: "1px solid #ccc",
-    borderRadius: "5px",
-    boxShadow: "2px 2px 5px rgba(0, 0, 0, 0.1)"
-  };
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Custom tooltip for enrollment pie chart
-  const EnrollmentPieTooltip = ({ active, payload }: any) => {
+  // API data states
+  const [seasonalData, setSeasonalData] = useState<any>(null)
+  const [growthData, setGrowthData] = useState<any>(null)
+  const [projectData, setProjectData] = useState<any>(null)
+  const [resourceData, setResourceData] = useState<any>(null)
+  const [forecastingData, setForecastingData] = useState<any>(null)
+
+  const fetchOverviewData = async (isInitial = false) => {
+    try {
+      if (isInitial) setInitialLoading(true)
+      else setRefreshing(true)
+      setError(null)
+
+      const params = new URLSearchParams()
+      if (selectedCustomers.length > 0 && !selectedCustomers.includes('all')) params.append('customers', selectedCustomers.join(','))
+      if (selectedProjects.length > 0 && !selectedProjects.includes('all')) params.append('projects', selectedProjects.join(','))
+      if (selectedResources.length > 0 && !selectedResources.includes('all')) params.append('resources', selectedResources.join(','))
+      if (selectedDateRange.start) params.append('startDate', selectedDateRange.start)
+      if (selectedDateRange.end) params.append('endDate', selectedDateRange.end)
+
+      const queryString = params.toString()
+      const baseUrl = (endpoint: string) => `http://localhost:5000${endpoint}${queryString ? `?${queryString}` : ''}`
+
+      console.log('Fetching overview data with params:', queryString)
+
+      const [
+        seasonalResponse,
+        growthResponse,
+        projectResponse,
+        resourceResponse,
+        forecastResponse,
+      ] = await Promise.all([
+        fetch(baseUrl('/api/seasonal-analysis')),
+        fetch(baseUrl('/api/growth-drivers')),
+        fetch(baseUrl('/api/project-analytics/revenue-by-project')),
+        fetch(baseUrl('/api/resource-performance/top-resources')),
+        fetch(baseUrl('/api/forecasting')),
+      ])
+
+      if (!seasonalResponse.ok) throw new Error(`Failed to fetch seasonal data: ${seasonalResponse.status}`)
+      if (!growthResponse.ok) throw new Error(`Failed to fetch growth data: ${growthResponse.status}`)
+      if (!projectResponse.ok) throw new Error(`Failed to fetch project data: ${projectResponse.status}`)
+      if (!resourceResponse.ok) throw new Error(`Failed to fetch resource data: ${resourceResponse.status}`)
+      if (!forecastResponse.ok) throw new Error(`Failed to fetch forecasting data: ${forecastResponse.status}`)
+
+      const [seasonal, growth, project, resource, forecast] = await Promise.all([
+        seasonalResponse.json(),
+        growthResponse.json(),
+        projectResponse.json(),
+        resourceResponse.json(),
+        forecastResponse.json(),
+      ])
+
+      console.log('Fetched overview data:', { seasonal, growth, project, resource, forecast })
+
+      setSeasonalData(seasonal)
+      setGrowthData(growth)
+      setProjectData(project)
+      setResourceData(resource)
+      setForecastingData(forecast)
+
+    } catch (err) {
+      console.error('Error fetching overview data:', err)
+      setError(err instanceof Error ? err.message : 'An error occurred')
+    } finally {
+      setInitialLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!contextLoading) {
+      const isInitialLoad = !seasonalData && !growthData && !projectData && !resourceData && !forecastingData
+      fetchOverviewData(isInitialLoad)
+    }
+  }, [contextLoading, selectedCustomers, selectedProjects, selectedResources, selectedDateRange])
+
+  const combinedForecastChartData = useMemo(() => {
+    if (!forecastingData?.historicalData || !forecastingData?.forecastData) return []
+    return [...forecastingData.historicalData, ...forecastingData.forecastData]
+  }, [forecastingData])
+
+  // Calculate KPIs for the dashboard overview
+  const dashboardKPIs = useMemo(() => {
+    const currentYear = new Date().getFullYear()
+    
+    // 1. Average Hourly Rate (Revenue Efficiency)
+    const totalRevenue = seasonalData?.monthlyChartData?.reduce((sum: number, month: any) => sum + month.revenue, 0) || 0
+    const totalHours = seasonalData?.monthlyChartData?.reduce((sum: number, month: any) => sum + (month.hours || 0), 0) || 0
+    const averageHourlyRate = totalHours > 0 ? totalRevenue / totalHours : 0
+    
+    // 2. YoY Growth Rate (Latest available)
+    const latestYoyGrowth = growthData?.annualGrowthData?.length > 0 ? 
+      growthData.annualGrowthData[growthData.annualGrowthData.length - 1]?.yoyGrowthRate || 0 : 0
+    
+    // 3. Rolling 12-Month Average (same logic as seasonal analysis)
+    let rolling12MonthAverage = 0
+    if (seasonalData?.monthlyChartData?.length > 0) {
+      const sortedMonthlyData = [...seasonalData.monthlyChartData].sort((a, b) => {
+        const dateA = new Date(a.fullMonth || `${a.month} 2024`)
+        const dateB = new Date(b.fullMonth || `${b.month} 2024`)
+        return dateB.getTime() - dateA.getTime() // Most recent first
+      })
+      const last12Months = sortedMonthlyData.slice(0, 12)
+      rolling12MonthAverage = last12Months.length > 0 ? 
+        last12Months.reduce((sum: number, month: any) => sum + month.revenue, 0) / last12Months.length : 0
+    }
+    
+    // 4. Top Project Revenue
+    const topProjectRevenue = projectData?.barChartData?.length > 0 ? 
+      Math.max(...projectData.barChartData.map((project: any) => project.value)) : 0
+    
+    // 5. Top Resource Revenue
+    const topResourceRevenue = resourceData?.topResources?.length > 0 ? 
+      Math.max(...resourceData.topResources.map((resource: any) => resource.totalRevenue)) : 0
+    
+    // 6. Total Billable Hours (Current Year estimate based on monthly data)
+    const totalBillableHours = seasonalData?.monthlyChartData?.length > 0 ?
+      seasonalData.monthlyChartData.reduce((sum: number, month: any) => sum + (month.hours || 0), 0) : 0
+
+    return {
+      averageHourlyRate,
+      latestYoyGrowth,
+      rolling12MonthAverage,
+      topProjectRevenue,
+      topResourceRevenue,
+      totalBillableHours
+    }
+  }, [seasonalData, growthData, projectData, resourceData])
+
+  // Tooltips
+  const CustomMonthlyTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0];
+      const data = payload[0].payload
       return (
-        <div style={CustomTooltipStyle}>
-          <p className="font-semibold">{data.name}</p>
-          <p className="text-sm">{formatNumber(data.value)} students</p>
+        <div className="bg-white p-3 border rounded shadow-lg">
+          <p className="font-semibold">{data.fullMonth}</p>
+          <p style={{ color: COLORS[0] }}>Revenue: {formatCurrency(data.revenue)}</p>
+          <p style={{ color: COLORS[1] }}>Hours: {formatNumber(data.hours)}</p>
         </div>
-      );
+      )
     }
-    return null;
-  };
+    return null
+  }
 
-  // Financial data for trends chart
-  const financialData = useMemo(() => {
-    // Group data by year
-    interface YearData {
-      year: number;
-      revenue: number;
-      expenses: number;
-      count: number;
+  const CustomGrowthTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className="bg-white p-3 border rounded shadow-lg">
+          <p className="font-semibold">{label}</p>
+          <p className="text-blue-600">Revenue: {formatCurrency(data.revenue)}</p>
+          <p className="text-green-600">YoY Growth: {data.yoyGrowthRate > 0 ? '+' : ''}{data.yoyGrowthRate.toFixed(1)}%</p>
+        </div>
+      )
     }
-    
-    const dataByYear = processedFinancialData.reduce<Record<number, YearData>>((acc, item) => {
-      // Filter based on selected universities
-      if (!selectedUniversities.includes("all") && 
-          !selectedUniversities.includes(item.university)) {
-        return acc;
-      }
-      
-      // Filter based on selected years
-      if (!selectedYears.includes("all") && 
-          !selectedYears.includes(item.fiscal_year.toString())) {
-        return acc;
-      }
-      
-      // Only include years that are also in the enrollment data if 'all' years are selected
-      // This ensures overview dashboard shows consistent data across all datasets
-      if (selectedYears.includes("all") && !years.includes(item.fiscal_year)) {
-        return acc;
-      }
-      
-      // Initialize year entry if it doesn't exist
-      if (!acc[item.fiscal_year]) {
-        acc[item.fiscal_year] = {
-          year: item.fiscal_year,
-          revenue: 0,
-          expenses: 0,
-          count: 0
-        };
-      }
-      
-      // Sum values using the new schema
-      acc[item.fiscal_year].revenue += item.total_revenue || (
-        item.government_grants + 
-        item.tuition_fees + 
-        item.sales_and_services +
-        item.non_government_grants_and_donations + 
-        item.investment_income
-      );
-      
-      acc[item.fiscal_year].expenses += item.total_expenses || item.total_operational_costs;
-      acc[item.fiscal_year].count++;
-      
-      return acc;
-    }, {});
-    
-    // Convert to array and sort by year
-    return Object.values(dataByYear)
-      .sort((a: YearData, b: YearData) => a.year - b.year)
-      .map((item: YearData) => ({
-        year: item.year,
-        revenue: item.revenue,
-        expenses: item.expenses
-      }));
-  }, [processedFinancialData, selectedUniversities, selectedYears, years]);
+    return null
+  }
+
+  const CustomBarTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border rounded shadow-lg">
+          <p className="font-semibold">{label}</p>
+          <p className="text-blue-600">Revenue: {formatCurrency(payload[0].value)}</p>
+        </div>
+      )
+    }
+    return null
+  }
   
-  // Enrollment data from actual dataset
-  const enrollmentData = useMemo(() => {
-    // Get universities data for the pie chart
-    const relevantYears = selectedYears.includes("all") ? 
-      [...new Set(filteredEnrollmentData.map(item => item.academic_year))].sort((a, b) => b - a) :
-      selectedYears.map(y => parseInt(y)).sort((a, b) => b - a);
-      
-    if (relevantYears.length === 0) return [];
-    
-    const latestYear = relevantYears[0];
-    
-    // Group by university for the latest year
-    const universityData = filteredEnrollmentData
-      .filter(item => item.academic_year === latestYear)
-      .reduce((acc, item) => {
-        const uniName = item.university;
-        if (!acc[uniName]) {
-          acc[uniName] = {
-            name: uniName,
-            value: 0
-          };
-        }
-        
-        // Sum total enrollment for each university
-        acc[uniName].value += item.total_enrollment_headcount || 0;
-        
-        return acc;
-      }, {} as Record<string, {name: string, value: number}>);
-    
-    // Convert to array and sort by value
-    return Object.values(universityData)
-      .sort((a, b) => b.value - a.value)
-      .map(item => ({
-        name: getUniversityShortName(item.name),
-        value: item.value
-      }));
-  }, [filteredEnrollmentData, selectedYears]);
-  
-  // Operational costs data from actual dataset
-  const costData = useMemo(() => {
-    // Updated to match the financial_results.json schema
-    const costCategories = [
-      { key: 'faculty_salaries', name: 'Faculty Salaries' },
-      { key: 'learning_expenses', name: 'Learning' },
-      { key: 'research_expenses', name: 'Research' },
-      { key: 'utilities_expenses', name: 'Utilities' },
-      { key: 'community_engagement_expenses', name: 'Community Engagement' }
-    ];
-    
-    // Get the most recent year's data across selected universities
-    const relevantYears = selectedYears.includes("all") ? 
-      [...new Set(filteredFinancialData.map(item => item.fiscal_year))].sort((a, b) => b - a) :
-      selectedYears.map(y => parseInt(y)).sort((a, b) => b - a);
-      
-    if (relevantYears.length === 0) return [];
-    
-    const latestYear = relevantYears[0];
-    
-    // Filter for the latest year
-    const latestYearData = filteredFinancialData.filter(item => item.fiscal_year === latestYear);
-    
-    // Create data for each cost category
-    const costsData = costCategories.map(category => {
-      // Sum across all selected universities
-      const totalValue = latestYearData.reduce((sum, item) => {
-        const value = item[category.key] as number;
-        return sum + (value || 0);
-      }, 0);
-      
-      return {
-        name: category.name,
-        value: totalValue
-      };
-    }).filter(item => item.value > 0); // Only include categories with values
-    
-    // Sort by value, descending
-    return costsData.sort((a, b) => b.value - a.value);
-  }, [filteredFinancialData, selectedYears]);
-  
-  // Program outcome data
-  const outcomeData = [
-    { program: "Business", completion: 85, employment: 88, satisfaction: 82 },
-    { program: "Engineering", completion: 78, employment: 92, satisfaction: 75 },
-    { program: "Sciences", completion: 80, employment: 83, satisfaction: 79 },
-    { program: "Arts", completion: 88, employment: 75, satisfaction: 86 },
-    { program: "Medicine", completion: 95, employment: 98, satisfaction: 90 },
-  ]
+  const CustomResourceTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className="bg-white p-3 border rounded shadow-lg">
+          <p className="font-semibold">{data.fullName}</p>
+          <p className="text-blue-600">Revenue: {formatCurrency(data.totalRevenue)}</p>
+          <p className="text-gray-600">Hours: {formatNumber(data.totalHours)}</p>
+          <p className="text-purple-600">Blended Rate: {formatCurrency(data.blendedRate)}</p>
+        </div>
+      )
+    }
+    return null
+  }
+
+  const CustomForecastTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className="bg-white p-4 border rounded-lg shadow-lg max-w-xs">
+          <p className="font-semibold text-gray-900 mb-2">{data.monthLabel}</p>
+          
+          {data.actual !== undefined && (
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm text-gray-600">Historical Revenue:</span>
+              <span className="font-medium" style={{ color: ACTUAL_COLOR }}>
+                {formatCurrency(data.actual)}
+              </span>
+            </div>
+          )}
+          
+          {data.fitted !== undefined && (
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-sm text-gray-600">Model Trend:</span>
+              <span className="font-medium" style={{ color: FITTED_COLOR }}>
+                {formatCurrency(data.fitted)}
+              </span>
+            </div>
+          )}
+          
+          {data.forecast !== undefined && (
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-gray-600">Revenue Forecast:</span>
+              <span className="font-medium" style={{ color: FORECAST_COLOR }}>
+                {formatCurrency(data.forecast)}
+              </span>
+            </div>
+          )}
+          
+          {data.lowerBound !== undefined && data.upperBound !== undefined && (
+            <div className="pt-2 border-t border-gray-200">
+              <div className="text-xs text-gray-500 mb-1">Confidence Interval (95%):</div>
+              <div className="flex justify-between text-xs">
+                <span>Low: <span className="font-medium">{formatCurrency(data.lowerBound)}</span></span>
+                <span>High: <span className="font-medium">{formatCurrency(data.upperBound)}</span></span>
+              </div>
+              <div className="text-xs text-gray-400 mt-1 text-center">
+                Range: ±{formatCurrency(Math.abs(data.upperBound - data.forecast))}
+              </div>
+            </div>
+          )}
+          
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <span className="text-xs font-medium px-2 py-1 rounded" style={{
+              backgroundColor: data.dataType === 'historical' ? '#eff6ff' : '#f0fdf4',
+              color: data.dataType === 'historical' ? '#1e40af' : '#166534'
+            }}>
+              {data.dataType === 'historical' ? 'Historical Data' : 'Projected Data'}
+            </span>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
+  if (contextLoading || initialLoading) {
+    return (
+      <DashboardLayout
+        selectedCustomers={selectedCustomers}
+        setSelectedCustomers={setSelectedCustomers}
+        selectedProjects={selectedProjects}
+        setSelectedProjects={setSelectedProjects}
+        selectedResources={selectedResources}
+        setSelectedResources={setSelectedResources}
+        activeTab="overview"
+        customers={customers}
+        projects={projects}
+        resources={resources}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading dashboard overview...</div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout
+        selectedCustomers={selectedCustomers}
+        setSelectedCustomers={setSelectedCustomers}
+        selectedProjects={selectedProjects}
+        setSelectedProjects={setSelectedProjects}
+        selectedResources={selectedResources}
+        setSelectedResources={setSelectedResources}
+        activeTab="overview"
+        customers={customers}
+        projects={projects}
+        resources={resources}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-red-600">Error: {error}</div>
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout
-      selectedUniversities={selectedUniversities}
-      setSelectedUniversities={setSelectedUniversities}
-      selectedYears={selectedYears}
-      setSelectedYears={setSelectedYears}
+      selectedCustomers={selectedCustomers}
+      setSelectedCustomers={setSelectedCustomers}
+      selectedProjects={selectedProjects}
+      setSelectedProjects={setSelectedProjects}
+      selectedResources={selectedResources}
+      setSelectedResources={setSelectedResources}
       activeTab="overview"
-      universities={universities}
-      years={years}
-      kpis={kpis}
+      customers={customers}
+      projects={projects}
+      resources={resources}
     >
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-card rounded-md border p-4">
-          <div className="text-lg font-medium mb-1">Financial Stability</div>
-          <div className="flex items-baseline gap-1">
-            <div className="text-3xl font-bold">
-              {kpis ? formatCurrency(kpis.financial_stability.value) : "Loading..."}
+      {/* Key Performance Indicators */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Average Hourly Rate</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(dashboardKPIs.averageHourlyRate)}
             </div>
-            <div className="text-sm text-muted-foreground">Net Assets</div>
-          </div>
-          {kpis && (
-            <div className="flex items-center gap-1 mt-1">
-              <ArrowUpRight
-                className={`w-4 h-4 ${kpis.financial_stability.change >= 0 ? "text-green-500" : "text-red-500"}`}
-              />
-              <span
-                className={`${kpis.financial_stability.change >= 0 ? "text-green-500" : "text-red-500"} font-medium`}
-              >
-                {kpis.financial_stability.change.toFixed(1)}%
-              </span>
-              <span className="text-sm text-muted-foreground">LY</span>
-            </div>
-          )}
-          <div className="text-xs text-muted-foreground mt-1">Since last fiscal year</div>
-        </div>
+            <p className="text-xs text-muted-foreground">
+              Revenue efficiency across all work
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card rounded-md border p-4">
-          <div className="text-lg font-medium mb-1">Domestic Tuition Revenue</div>
-          <div className="flex items-baseline gap-1">
-            <div className="text-3xl font-bold">
-              {kpis ? formatCurrency(kpis.enrollment_domestic.value) : "Loading..."}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">YoY Growth Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {dashboardKPIs.latestYoyGrowth > 0 ? '+' : ''}{dashboardKPIs.latestYoyGrowth.toFixed(1)}%
             </div>
-            <div className="text-sm text-muted-foreground">Annual</div>
-          </div>
-          {kpis && (
-            <div className="flex items-center gap-1 mt-1">
-              <ArrowUpRight
-                className={`w-4 h-4 ${kpis.enrollment_domestic.change >= 0 ? "text-green-500" : "text-red-500"}`}
-              />
-              <span
-                className={`${kpis.enrollment_domestic.change >= 0 ? "text-green-500" : "text-red-500"} font-medium`}
-              >
-                {kpis.enrollment_domestic.change.toFixed(1)}%
-              </span>
-              <span className="text-sm text-muted-foreground">LY</span>
-            </div>
-          )}
-          <div className="text-xs text-muted-foreground mt-1">Since last fiscal year</div>
-        </div>
+            <p className="text-xs text-muted-foreground">
+              Year-over-year growth
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card rounded-md border p-4">
-          <div className="text-lg font-medium mb-1">International Tuition Revenue</div>
-          <div className="flex items-baseline gap-1">
-            <div className="text-3xl font-bold">
-              {kpis ? formatCurrency(kpis.enrollment_intl.value) : "Loading..."}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rolling 12-Month Avg</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(dashboardKPIs.rolling12MonthAverage)}
             </div>
-            <div className="text-sm text-muted-foreground">Annual</div>
-          </div>
-          {kpis && (
-            <div className="flex items-center gap-1 mt-1">
-              <ArrowUpRight
-                className={`w-4 h-4 ${kpis.enrollment_intl.change >= 0 ? "text-green-500" : "text-red-500"}`}
-              />
-              <span
-                className={`${kpis.enrollment_intl.change >= 0 ? "text-green-500" : "text-red-500"} font-medium`}
-              >
-                {kpis.enrollment_intl.change.toFixed(1)}%
-              </span>
-              <span className="text-sm text-muted-foreground">LY</span>
-            </div>
-          )}
-          <div className="text-xs text-muted-foreground mt-1">Since last fiscal year</div>
-        </div>
+            <p className="text-xs text-muted-foreground">
+              Monthly average (last 12 months)
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-card rounded-md border p-4">
-          <div className="text-lg font-medium mb-1">Government Funding</div>
-          <div className="flex items-baseline gap-1">
-            <div className="text-3xl font-bold">
-              {kpis ? formatCurrency(kpis.government_funding.value) : "Loading..."}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Billable Hours</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatNumber(dashboardKPIs.totalBillableHours)}
             </div>
-            <div className="text-sm text-muted-foreground">Annual Grants</div>
-          </div>
-          {kpis && (
-            <div className="flex items-center gap-1 mt-1">
-              <ArrowUpRight
-                className={`w-4 h-4 ${kpis.government_funding.change >= 0 ? "text-green-500" : "text-red-500"}`}
-              />
-              <span
-                className={`${kpis.government_funding.change >= 0 ? "text-green-500" : "text-red-500"} font-medium`}
-              >
-                {kpis.government_funding.change.toFixed(1)}%
-              </span>
-              <span className="text-sm text-muted-foreground">LY</span>
-            </div>
-          )}
-          <div className="text-xs text-muted-foreground mt-1">Since last fiscal year</div>
-        </div>
+            <p className="text-xs text-muted-foreground">
+              All tracked billable hours
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Visualizations from each dashboard - Emphasis on enrollment and operational costs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Financial Chart - Top Left */}
-        <Card>
+      <div className="grid grid-cols-1 gap-6">
+        {/* Forecasting Chart */}
+        <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Financial Trends</CardTitle>
-            <CardDescription>Revenue vs. Expenses</CardDescription>
+            <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" />Revenue Forecast</CardTitle>
+            <CardDescription>Holt-Winters forecast showing historical, fitted, and projected revenue.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={financialData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="year" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip formatter={(value) => [formatCurrency(value as number), ""]} />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    name="Total Revenue" 
-                    stroke="#8884d8" 
-                    activeDot={{ r: 8 }} 
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="expenses" 
-                    name="Total Expenses" 
-                    stroke="#82ca9d" 
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-2 text-right">
-              <Link href="/dashboard/financials" className="text-sm text-primary hover:underline">
-                View Full Financial Dashboard →
-              </Link>
-            </div>
+            <ResponsiveContainer width="100%" height={400}>
+              <ComposedChart data={combinedForecastChartData} margin={{ top: 20, right: 30, left: 20, bottom: 15 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="monthLabel" 
+                  fontSize={12} 
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                <Tooltip content={<CustomForecastTooltip />} />
+                <Legend />
+                
+                {/* Confidence interval area - rendered without legend entries */}
+                <Area type="monotone" dataKey="upperBound" fill={FORECAST_COLOR} fillOpacity={0.15} stroke="none" legendType="none" />
+                <Area type="monotone" dataKey="lowerBound" fill="white" fillOpacity={1} stroke="none" legendType="none" />
+                
+                {/* Revenue lines */}
+                <Line type="monotone" dataKey="actual" stroke={ACTUAL_COLOR} strokeWidth={2} name="Historical Revenue" dot={false} />
+                <Line type="monotone" dataKey="fitted" stroke={FITTED_COLOR} strokeWidth={2} strokeDasharray="5 5" name="Model Trend" dot={false} />
+                <Line type="monotone" dataKey="forecast" stroke={FORECAST_COLOR} strokeWidth={3} name="Revenue Forecast" dot={false} />
+                
+                {/* Custom legend entry for confidence interval */}
+                <Line type="monotone" dataKey="upperBound" stroke={FORECAST_COLOR} strokeWidth={0} fill={FORECAST_COLOR} fillOpacity={0.15} name="Confidence Interval" connectNulls={false} dot={false} legendType="rect" />
+              </ComposedChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Operational Costs Chart - Top Right */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Operational Costs</CardTitle>
-            <CardDescription>Major expense categories</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={costData}
-                  layout="vertical"
-                  margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
-                >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Seasonal Analysis Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Calendar className="w-5 h-5" />Monthly Revenue Analysis</CardTitle>
+              <CardDescription>Average monthly revenue and billable hours.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={seasonalData?.monthlyChartData || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" fontSize={12} />
+                  <YAxis yAxisId="left" tickFormatter={(value) => formatCurrency(value)} />
+                  <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => formatNumber(value)} />
+                  <Tooltip content={<CustomMonthlyTooltip />} />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="revenue" name="Revenue" fill={COLORS[0]} />
+                  <Line yAxisId="right" type="monotone" dataKey="hours" name="Hours" stroke={COLORS[1]} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Growth Drivers Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5" />Annual Revenue & YoY Growth</CardTitle>
+              <CardDescription>Yearly revenue totals with year-over-year growth rate.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={growthData?.annualGrowthData || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="year" fontSize={12} />
+                  <YAxis yAxisId="left" tickFormatter={(value) => formatCurrency(value)} />
+                  <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value}%`} />
+                  <Tooltip content={<CustomGrowthTooltip />} />
+                  <Legend />
+                  <Bar yAxisId="left" dataKey="revenue" name="Annual Revenue" fill="#3b82f6" />
+                  <Line yAxisId="right" type="monotone" dataKey="yoyGrowthRate" stroke="#10b981" strokeWidth={3} name="YoY Growth Rate (%)" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Project Analytics Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><BarChart3 className="w-5 h-5" />Top 5 Projects by Revenue</CardTitle>
+              <CardDescription>Highest revenue-generating projects in the selected period.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={projectData?.barChartData || []} layout="vertical" margin={{ left: -50}}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
-                  <YAxis type="category" dataKey="name" width={80} />
-                  <Tooltip formatter={(value) => [formatCurrency(value as number), ""]} />
-                  <Legend />
-                  <Bar 
-                    dataKey="value" 
-                    name="Amount" 
-                    fill="#8884d8"
-                    radius={[0, 4, 4, 0]} 
-                  />
+                  <YAxis type="category" dataKey="name" width={150} fontSize={12} />
+                  <Tooltip content={<CustomBarTooltip />} />
+                  <Bar dataKey="value" name="Revenue" fill={ACTUAL_COLOR} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-            <div className="mt-2 text-right">
-              <Link href="/dashboard/operational-costs" className="text-sm text-primary hover:underline">
-                View Full Operational Costs Dashboard →
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Enrollment Chart - Bottom Left */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Student Population</CardTitle>
-            <CardDescription>Total enrollment by university</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={enrollmentData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={true}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {enrollmentData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<EnrollmentPieTooltip />} />
-                </PieChart>
+          {/* Resource Performance Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" />Top 10 Performing Resources</CardTitle>
+              <CardDescription>Resources contributing the most revenue.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={resourceData?.topResources || []} layout="vertical" margin={{ left: -100}}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" tickFormatter={(value) => formatCurrency(value)} />
+                  <YAxis type="category" dataKey="resourceName" width={150} fontSize={12} />
+                  <Tooltip content={<CustomResourceTooltip />} />
+                  <Bar dataKey="totalRevenue" name="Revenue" fill={FORECAST_COLOR} />
+                </BarChart>
               </ResponsiveContainer>
-            </div>
-            <div className="mt-2 text-right">
-              <Link href="/dashboard/enrollment" className="text-sm text-primary hover:underline">
-                View Full Enrollment Dashboard →
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Program Outcomes Chart - Bottom Right */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Program Outcomes</CardTitle>
-            <CardDescription>Completion, employment, and satisfaction rates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={outcomeData}>
-                  <PolarGrid />
-                  <PolarAngleAxis dataKey="program" />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} />
-                  <Radar 
-                    name="Completion" 
-                    dataKey="completion" 
-                    stroke="#8884d8" 
-                    fill="#8884d8" 
-                    fillOpacity={0.6} 
-                  />
-                  <Radar 
-                    name="Employment" 
-                    dataKey="employment" 
-                    stroke="#82ca9d" 
-                    fill="#82ca9d" 
-                    fillOpacity={0.6} 
-                  />
-                  <Radar 
-                    name="Satisfaction" 
-                    dataKey="satisfaction" 
-                    stroke="#ffc658" 
-                    fill="#ffc658" 
-                    fillOpacity={0.6} 
-                  />
-                  <Legend />
-                  <Tooltip />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-2 text-right">
-              <Link href="/dashboard/program-curriculum" className="text-sm text-primary hover:underline">
-                View Full Program Dashboard →
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </DashboardLayout>
   )
-} 
+}

@@ -9,6 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export default function ChatbotAdminPage() {
   const [isIndexing, setIsIndexing] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [fullRefresh, setFullRefresh] = useState(false);
+  const [maxAgeDays, setMaxAgeDays] = useState(7);
   const [indexResult, setIndexResult] = useState<{
     status: "success" | "error" | null;
     message: string;
@@ -34,6 +36,10 @@ export default function ChatbotAdminPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          full_refresh: fullRefresh,
+          max_age_days: maxAgeDays
+        }),
       });
 
       const data = await response.json();
@@ -41,20 +47,20 @@ export default function ChatbotAdminPage() {
       if (response.ok && data.success) {
         setIndexResult({
           status: "success",
-          message: data.message || `Successfully indexed ${data.count} reports`,
+          message: data.message || "Successfully populated knowledge base from web sources",
           count: data.count,
         });
       } else {
         setIndexResult({
           status: "error",
-          message: data.error || "Failed to index reports",
+          message: data.message || data.error || "Failed to populate knowledge base",
         });
       }
     } catch (error) {
-      console.error("Error indexing reports:", error);
+      console.error("Error populating knowledge base:", error);
       setIndexResult({
         status: "error",
-        message: "An error occurred while indexing reports",
+        message: "An error occurred while populating the knowledge base",
       });
     } finally {
       setIsIndexing(false);
@@ -121,17 +127,50 @@ export default function ChatbotAdminPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Reports Indexing</CardTitle>
+            <CardTitle>Knowledge Base Population</CardTitle>
             <CardDescription>
-              Manually trigger indexing of all reports in the system
+              Populate the knowledge base by crawling web sources
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              This will process all PDF and TXT files in the Reports directory and add them to the
+              This will crawl and process all web pages listed in the BusinessReports/pages.txt file and add them to the
               vector database for retrieval. This process may take several minutes depending on the
-              number and size of the reports.
+              number of web sources and their content size.
             </p>
+
+            <div className="space-y-4 mb-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="fullRefresh"
+                  checked={fullRefresh}
+                  onChange={(e) => setFullRefresh(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                <label htmlFor="fullRefresh" className="text-sm font-medium">
+                  Full Refresh (re-crawl all URLs)
+                </label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <label htmlFor="maxAge" className="text-sm font-medium">
+                  Max Age (days):
+                </label>
+                <input
+                  type="number"
+                  id="maxAge"
+                  min="1"
+                  max="30"
+                  value={maxAgeDays}
+                  onChange={(e) => setMaxAgeDays(parseInt(e.target.value) || 7)}
+                  className="w-20 px-2 py-1 text-sm border rounded"
+                />
+                <span className="text-xs text-muted-foreground">
+                  Re-crawl URLs older than this many days
+                </span>
+              </div>
+            </div>
 
             {indexResult.status && (
               <Alert
@@ -164,12 +203,12 @@ export default function ChatbotAdminPage() {
               {isIndexing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Indexing Reports...
+                  Populating Knowledge Base...
                 </>
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Index All Reports
+                  Populate Knowledge Base
                 </>
               )}
             </Button>
@@ -200,7 +239,7 @@ export default function ChatbotAdminPage() {
                 <span className="text-sm">all-MiniLM-L6-v2</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Reports Indexed:</span>
+                <span className="text-sm font-medium">Web Sources Indexed:</span>
                 <span className="text-sm">{systemStatus.reportsIndexed}</span>
               </div>
               {systemStatus.lastChecked && (

@@ -1,5 +1,113 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# =============================================================================
+# == General
+# =============================================================================
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# =============================================================================
+# == Python
+# =============================================================================
+# Virtual Environments
+venv/
+/venv/
+.venv/
+*/venv/
+env/
+/env/
+.env/
+*/env/
+
+# Byte-compiled / optimized / C extensions
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Mypy cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest cache
+.pytest_cache/
+.coverage
+.coverage.*
+.cache
+
+# Other
+/conversations.db
+*.db
+/bi_rag_storage
+/dataset_summary.json
+/output_file_1.csv
+
+# =============================================================================
+# == macOS
+# =============================================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
 # dependencies
 /node_modules
 /.pnp
@@ -25,9 +133,6 @@
 *.pem
 
 # debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
@@ -71,3 +176,5 @@ var/
 education-dashboard-api/vector_db/documents.pkl
 education-dashboard-api/vector_db/embeddings.npy
 education-dashboard-api/vector_db/metadata.json
+
+venv/

@@ -1,0 +1,422 @@
+{
+    "overall_statistics": {
+        "total_revenue": 6209723.21,
+        "blended_rate": 181.48573622195906,
+        "total_projects": 344,
+        "total_customers": 128,
+        "total_hours": 34216.04
+    },
+    "top_5_customers_by_revenue": [
+        {
+            "Pharmacy": 666950.0
+        },
+        {
+            "UniversityHill": 528450.63
+        },
+        {
+            "State Transportation": 300406.27
+        },
+        {
+            "Saanich": 293642.85
+        },
+        {
+            "WWW": 280383.63
+        }
+    ],
+    "top_5_projects_by_revenue": [
+        {
+            "Modernization of Phone System": 445085.0
+        },
+        {
+            "Endpoint Management": 308020.99
+        },
+        {
+            "GroupWise migration planning and support services / Additional Migration Support 5078": 221422.14
+        },
+        {
+            "Virtual Bench": 217632.5
+        },
+        {
+            "Intranet Extranet Architect and Implementation": 183903.13
+        }
+    ],
+    "top_5_customer_categories_by_revenue": [
+        {
+            "Education Sector": 1835110.98
+        },
+        {
+            "Commercial/Corporate": 1384611.47
+        },
+        {
+            "Government/Municipality": 1061793.52
+        },
+        {
+            "Other": 739103.69
+        },
+        {
+            "Health & Community Services": 706043.75
+        }
+    ],
+    "annual_revenue_growth": [
+        {
+            "year": 2020,
+            "revenue": 1037196.19,
+            "yoy_growth_rate_percent": null
+        },
+        {
+            "year": 2021,
+            "revenue": 988774.83,
+            "yoy_growth_rate_percent": -4.67
+        },
+        {
+            "year": 2022,
+            "revenue": 899176.68,
+            "yoy_growth_rate_percent": -9.06
+        },
+        {
+            "year": 2023,
+            "revenue": 1285298.91,
+            "yoy_growth_rate_percent": 42.94
+        },
+        {
+            "year": 2024,
+            "revenue": 1999276.6,
+            "yoy_growth_rate_percent": 55.55
+        }
+    ],
+    "top_5_resources_by_revenue": [
+        {
+            "Bingo": 1100222.01
+        },
+        {
+            "KC": 945398.81
+        },
+        {
+            "MA": 505591.64
+        },
+        {
+            "GO": 370900.0
+        },
+        {
+            "BM": 346603.75
+        }
+    ],
+    "seasonal_highlights": {
+        "highest_revenue_month": {
+            "month": "March",
+            "revenue": 644388.81
+        },
+        "lowest_revenue_month": {
+            "month": "July",
+            "revenue": 456637.66
+        },
+        "low_season_months": [
+            "July",
+            "January",
+            "August"
+        ],
+        "seasonal_variance_percent": 36.28
+    },
+    "project_portfolio_summary": {
+        "description": "Projects categorized by value and effort. Thresholds are 60th percentile for hours and 40th percentile for hourly rate.",
+        "quadrants": {
+            "Efficiency Drains": {
+                "total_revenue": 2604827.64,
+                "project_count": 56
+            },
+            "High-Value Specialists": {
+                "total_revenue": 540767.38,
+                "project_count": 145
+            },
+            "Routine Tasks": {
+                "total_revenue": 169461.25,
+                "project_count": 61
+            },
+            "Strategic Partnerships": {
+                "total_revenue": 2894666.94,
+                "project_count": 82
+            }
+        }
+    },
+    "new_business_summary_latest_year": {
+        "year": 2024,
+        "new_project_count": 61,
+        "new_project_revenue": 1439750.35,
+        "new_customer_count": 14,
+        "new_customer_revenue": 137825.0
+    },
+    "resource_performance_clusters": {
+        "Support Resources": {
+            "resource_count": 13,
+            "total_revenue": 1630663.26
+        },
+        "Versatile Contributors": {
+            "resource_count": 4,
+            "total_revenue": 2878299.96
+        },
+        "Volume Leaders": {
+            "resource_count": 5,
+            "total_revenue": 669895.9
+        }
+    },
+    "detailed_project_kpis": {
+        "avg_project_duration_days": 191.13,
+        "avg_revenue_per_project": 18051.52
+    },
+    "yoy_monthly_growth_summary": {
+        "January": "23.33%",
+        "February": "30.18%",
+        "March": "29.96%",
+        "April": "9.99%",
+        "May": "14.33%",
+        "June": "16.01%",
+        "July": "39.33%",
+        "August": "31.37%",
+        "September": "30.62%",
+        "October": "25.94%",
+        "November": "19.57%",
+        "December": "29.15%"
+    },
+    "blended_rate_trend_by_year": {
+        "2020": 156.69,
+        "2021": 173.09,
+        "2022": 187.04,
+        "2023": 192.11,
+        "2024": 192.49
+    },
+    "project_duration_distribution": {
+        "0-30 days": 84,
+        "31-90 days": 79,
+        "91-180 days": 67,
+        "181-365 days": 60,
+        "365+ days": 54
+    },
+    "overall_resource_kpis": {
+        "active_resources_count": 23
+    },
+    "time_series_properties": {
+        "trend_strength": 0.5106,
+        "seasonality_strength": 0.4174
+    },
+    "top_performers_by_category": {
+        "Commercial/Corporate": {
+            "top_customers_by_revenue": {
+                "Madison": 139821.25,
+                "Iris": 128714.5,
+                "Great Paper": 128112.5,
+                "Macroservice": 118643.75,
+                "EatLess": 101687.54
+            },
+            "top_projects_by_revenue": {
+                "IT Support": 103700.0,
+                "Security Program Project Management": 97412.5,
+                "Infrastructure Principal Consultant": 96000.0,
+                "Microsoft Teams and Email Migration": 80062.54,
+                "Configure Intune MDM and Enroll all Windows 10 Devices": 65025.01
+            }
+        },
+        "Education Sector": {
+            "top_customers_by_revenue": {
+                "UniversityHill": 528450.63,
+                "Saanich": 293642.85,
+                "CNC": 269025.0,
+                "TheCollege ": 134218.75,
+                "Capilano": 130505.0
+            },
+            "top_projects_by_revenue": {
+                "Modernization of Phone System": 445085.0,
+                "Network Renewal": 174543.75,
+                "FIM to MIM Upgrade Support": 130505.0,
+                "M365 Service Migration and Enablement": 90631.25,
+                "M365 Integration Services": 82745.08
+            }
+        },
+        "Government/Municipality": {
+            "top_customers_by_revenue": {
+                "State Transportation": 300406.27,
+                "Castlegar": 238181.33,
+                "Surrey": 146100.0,
+                "BC": 124692.75,
+                "RDCK": 57668.75
+            },
+            "top_projects_by_revenue": {
+                "Intranet Extranet Architect and Implementation": 183903.13,
+                "Infrastructure Support": 147075.01,
+                "Azure Data Pipeline": 97003.14,
+                "Microsoft 365 Consultant": 89182.75,
+                "Security Operations and Endpoint Management": 68000.0
+            }
+        },
+        "Health & Community Services": {
+            "top_customers_by_revenue": {
+                "Pharmacy": 666950.0,
+                "Lookout Housing Society": 20693.75,
+                "CMHA": 11500.0,
+                "Cowichan Women": 6900.0
+            },
+            "top_projects_by_revenue": {
+                "Endpoint Management": 249581.25,
+                "RC4 placeholder": 114300.0,
+                "SCCM and Intune": 84250.0,
+                "Infrastructure Modernization": 74000.0,
+                "DC Fleet Upgrade": 56750.0
+            }
+        },
+        "Other": {
+            "top_customers_by_revenue": {
+                "WWW": 280383.63,
+                "Art": 95843.77,
+                "Thompson": 73443.75,
+                "RJC": 68112.5,
+                "Simon": 39075.0
+            },
+            "top_projects_by_revenue": {
+                "Virtual Bench": 217632.5,
+                "Infrastructure Modernization": 55950.0,
+                "Data Migration Phase 2": 48656.25,
+                "University \u2013 SQL DB2 Integration Consulting": 37237.5,
+                "University \u2013 Microsoft Identity Manager 2016 Deployment": 35612.5
+            }
+        },
+        "Technology & IT": {
+            "top_customers_by_revenue": {
+                "Micro": 240303.4,
+                "FX": 167947.01,
+                "OKC": 55587.5,
+                "Insight": 7050.0,
+                "PT": 6609.39
+            },
+            "top_projects_by_revenue": {
+                "GroupWise migration planning and support services / Additional Migration Support 5078": 221422.14,
+                "FCC \u2013 M365 Migration": 156243.88,
+                "incident response placeholder": 34687.5,
+                "GroupWise migration planning and support services, per the scope and terms of RFO 5078": 18881.26,
+                "AVD Implementation": 12800.0
+            }
+        }
+    },
+    "low_season_top_performers": {
+        "description": "Top revenue generators during the three lowest-revenue months of the year.",
+        "top_customers": {
+            "Pharmacy": 195118.75,
+            "UniversityHill": 110081.25,
+            "WWW": 90397.75,
+            "Castlegar": 79384.4,
+            "Micro": 74559.46
+        },
+        "top_projects": {
+            "Modernization of Phone System": 85750.0,
+            "Endpoint Management": 80864.99,
+            "GroupWise migration planning and support services / Additional Migration Support 5078": 74559.46,
+            "Virtual Bench": 62082.5,
+            "Infrastructure Support": 55612.5
+        }
+    },
+    "revenue_forecast_next_12_months": {
+        "2025-01": 179938.45,
+        "2025-02": 196402.55,
+        "2025-03": 221148.57,
+        "2025-04": 181736.5,
+        "2025-05": 187206.32,
+        "2025-06": 177047.46,
+        "2025-07": 162257.85,
+        "2025-08": 164310.29,
+        "2025-09": 164819.8,
+        "2025-10": 178609.83,
+        "2025-11": 180053.39,
+        "2025-12": 165950.2
+    },
+    "top_entity_profiles": {
+        "customers": {
+            "Pharmacy": {
+                "total_revenue": 666950.0,
+                "total_hours": 3354.75,
+                "project_count": 9.0
+            },
+            "UniversityHill": {
+                "total_revenue": 528450.63,
+                "total_hours": 3208.25,
+                "project_count": 9.0
+            },
+            "State Transportation": {
+                "total_revenue": 300406.27,
+                "total_hours": 1605.75,
+                "project_count": 3.0
+            },
+            "Saanich": {
+                "total_revenue": 293642.85,
+                "total_hours": 1499.0,
+                "project_count": 8.0
+            },
+            "WWW": {
+                "total_revenue": 280383.63,
+                "total_hours": 1664.0,
+                "project_count": 9.0
+            }
+        },
+        "projects": {
+            "Modernization of Phone System": {
+                "total_revenue": 445085.0,
+                "total_hours": 2795.0,
+                "customers": "UniversityHill",
+                "categories": "Education Sector"
+            },
+            "Endpoint Management": {
+                "total_revenue": 308020.99,
+                "total_hours": 1520.25,
+                "customers": "ISL, Pharmacy, Saanich",
+                "categories": "Education Sector, Health & Community Services, Other"
+            },
+            "GroupWise migration planning and support services / Additional Migration Support 5078": {
+                "total_revenue": 221422.14,
+                "total_hours": 1293.02,
+                "customers": "Micro",
+                "categories": "Technology & IT"
+            },
+            "Virtual Bench": {
+                "total_revenue": 217632.5,
+                "total_hours": 1278.5,
+                "customers": "WWW",
+                "categories": "Other"
+            },
+            "Intranet Extranet Architect and Implementation": {
+                "total_revenue": 183903.13,
+                "total_hours": 973.25,
+                "customers": "State Transportation",
+                "categories": "Government/Municipality"
+            }
+        },
+        "resources": {
+            "Bingo": {
+                "total_revenue": 1100222.01,
+                "total_hours": 5713.65,
+                "project_count": 65.0,
+                "blended_rate": 192.56027408049147
+            },
+            "KC": {
+                "total_revenue": 945398.81,
+                "total_hours": 5021.0,
+                "project_count": 75.0,
+                "blended_rate": 188.28894841665007
+            },
+            "MA": {
+                "total_revenue": 505591.64,
+                "total_hours": 2418.7,
+                "project_count": 51.0,
+                "blended_rate": 209.0344565262331
+            },
+            "GO": {
+                "total_revenue": 370900.0,
+                "total_hours": 2055.75,
+                "project_count": 38.0,
+                "blended_rate": 180.42077100814788
+            },
+            "BM": {
+                "total_revenue": 346603.75,
+                "total_hours": 1969.0,
+                "project_count": 49.0,
+                "blended_rate": 176.03034535297104
+            }
+        }
+    }
+}

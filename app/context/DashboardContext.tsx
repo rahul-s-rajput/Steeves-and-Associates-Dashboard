@@ -1,70 +1,55 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react'
 
-// Define the financial data type based on the JSON structure
-interface FinancialData {
-  university: string
-  fiscal_year: number
-  government_grants: number
-  tuition_fees: number
-  faculty_salaries: number
-  net_assets: number
-  total_expenses: number
-  total_revenue: number
-  total_operational_costs: number
-  sales_and_services: number
-  non_government_grants_and_donations: number
-  investment_income: number
-  learning_expenses: number
-  research_expenses: number
-  utilities_expenses: number
-  community_engagement_expenses: number
-  cash_and_cash_equivalents: number
-  accounts_receivable: number
-  portfolio_investments: number
-  tangible_capital_assets: number
-  accounts_payable_and_accrued_liabilities: number
-  debt: number
+// Define the project data type based on the CSV structure
+interface ProjectData {
+  "Customer Name": string
+  "Project": string
+  "Worked Date": string
+  "Task or Ticket Title": string
+  "Resource Name": string
+  "Billable Hours": number
+  "Hourly Billing Rate": number
+  "Extended Price": number
+  "Detailed Customer Category": string
   [key: string]: string | number // For dynamic access
 }
 
-// Define the enrollment data type based on the JSON structure
-interface EnrollmentData {
-  university: string
-  academic_year: number
-  total_enrollment_headcount: number
-  domestic_students_headcount: number
-  international_students_headcount: number
-  indigenous_students_headcount: number
-  completion_rate_undergraduate: number
-  completion_rate_master: number
-  completion_rate_phd: number
-  [key: string]: string | number // For dynamic access
+interface ProjectStats {
+  total_revenue: number
+  total_projects: number
+  total_customers: number
+  total_hours: number
+  avg_hourly_rate: number
+  customer_categories: Record<string, number>
+  revenue_by_customer: Record<string, number>
+  revenue_by_project: Record<string, number>
+  monthly_revenue: Record<string, number>
 }
 
 interface DashboardContextType {
-  financialData: Record<string, FinancialData>
-  enrollmentData: Record<string, EnrollmentData>
-  processedFinancialData: FinancialData[]
-  processedEnrollmentData: EnrollmentData[]
-  selectedUniversities: string[]
-  setSelectedUniversities: (universities: string[]) => void
-  selectedYears: string[]
-  setSelectedYears: (years: string[]) => void
-  selectedMetric: string
-  setSelectedMetric: (metric: string) => void
+  projectData: ProjectData[]
+  projectStats: ProjectStats | null
+  selectedCustomers: string[]
+  setSelectedCustomers: (customers: string[]) => void
+  selectedProjects: string[]
+  setSelectedProjects: (projects: string[]) => void
+  selectedResources: string[]
+  setSelectedResources: (resources: string[]) => void
+  selectedDateRange: { start: string; end: string }
+  setSelectedDateRange: (range: { start: string; end: string }) => void
   loading: boolean
-  universities: string[]
-  years: number[]
-  financialYears: number[]
-  enrollmentYears: number[]
-  kpis: any
-  calculateKPIs: () => any
-  filteredFinancialData: FinancialData[]
-  filteredEnrollmentData: EnrollmentData[]
+  customers: string[]
+  projects: string[]
+  resources: string[]
+  filteredProjectData: ProjectData[]
   formatCurrency: (value: number) => string
   formatNumber: (value: number) => string
+  getRevenueByMonth: () => Array<{ month: string; revenue: number }>
+  getRevenueByCustomer: () => Array<{ customer: string; revenue: number }>
+  getRevenueByProject: () => Array<{ project: string; revenue: number }>
+  getHoursByResource: () => Array<{ resource: string; hours: number }>
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined)
@@ -82,376 +67,197 @@ interface DashboardProviderProps {
 }
 
 export function DashboardProvider({ children }: DashboardProviderProps) {
-  // Sample data for initial rendering
-  const sampleFinancialData: Record<string, FinancialData> = {
-    sample: {
-      university: "Loading...",
-      fiscal_year: 2024,
-      government_grants: 0,
-      tuition_fees: 0,
-      faculty_salaries: 0,
-      net_assets: 0,
-      total_expenses: 0,
-      total_revenue: 0,
-      total_operational_costs: 0,
-      sales_and_services: 0,
-      non_government_grants_and_donations: 0,
-      investment_income: 0,
-      learning_expenses: 0,
-      research_expenses: 0,
-      utilities_expenses: 0,
-      community_engagement_expenses: 0,
-      cash_and_cash_equivalents: 0,
-      accounts_receivable: 0,
-      portfolio_investments: 0,
-      tangible_capital_assets: 0,
-      accounts_payable_and_accrued_liabilities: 0,
-      debt: 0,
-    },
-  }
-
-  const sampleEnrollmentData: Record<string, EnrollmentData> = {
-    sample: {
-      university: "Loading...",
-      academic_year: 2024,
-      total_enrollment_headcount: 0,
-      domestic_students_headcount: 0,
-      international_students_headcount: 0,
-      indigenous_students_headcount: 0,
-      completion_rate_undergraduate: 0,
-      completion_rate_master: 0,
-      completion_rate_phd: 0,
-    },
-  }
-
-  const [financialData, setFinancialData] = useState<Record<string, FinancialData>>(sampleFinancialData)
-  const [enrollmentData, setEnrollmentData] = useState<Record<string, EnrollmentData>>(sampleEnrollmentData)
-  const [processedFinancialData, setProcessedFinancialData] = useState<FinancialData[]>([])
-  const [processedEnrollmentData, setProcessedEnrollmentData] = useState<EnrollmentData[]>([])
-  const [selectedUniversities, setSelectedUniversities] = useState<string[]>(["all"])
-  const [selectedYears, setSelectedYears] = useState<string[]>(["all"])
-  const [selectedMetric, setSelectedMetric] = useState<string>("government_grants")
+  const [projectData, setProjectData] = useState<ProjectData[]>([])
+  const [projectStats, setProjectStats] = useState<ProjectStats | null>(null)
+  const [selectedCustomers, setSelectedCustomers] = useState<string[]>(["all"])
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(["all"])
+  const [selectedResources, setSelectedResources] = useState<string[]>(["all"])
+  const [selectedDateRange, setSelectedDateRange] = useState<{ start: string; end: string }>({
+    start: "2020-01-01",
+    end: "2024-12-31"
+  })
   const [loading, setLoading] = useState<boolean>(true)
 
   // Format currency
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) {
-      return `$${(Math.round(value / 100000000) / 10).toFixed(1)}B`; // Always show 1 decimal
+      return `$${(Math.round(value / 100000000) / 10).toFixed(1)}B`
     } else if (value >= 1000000) {
-      return `$${(Math.round(value / 100000) / 10).toFixed(1)}M`; // Always show 1 decimal
+      return `$${(Math.round(value / 100000) / 10).toFixed(1)}M`
     } else if (value >= 1000) {
-      return `$${(Math.round(value / 100) / 10).toFixed(1)}K`; // Always show 1 decimal
+      return `$${(Math.round(value / 100) / 10).toFixed(1)}K`
     } else {
-      return `$${Math.round(value)}`;
+      return `$${Math.round(value)}`
     }
   }
 
-  // Format numbers with K suffix for thousands
+  // Format numbers with K/M suffix
   const formatNumber = (value: number): string => {
     if (value >= 1000000) {
-      return `${(Math.round(value / 100000) / 10).toFixed(1)}M`; // Always show 1 decimal
+      return `${(Math.round(value / 100000) / 10).toFixed(1)}M`
     } else if (value >= 1000) {
-      return `${(Math.round(value / 100) / 10).toFixed(1)}K`; // Always show 1 decimal
+      return `${(Math.round(value / 100) / 10).toFixed(1)}K`
     }
-    return Math.round(value).toString();
-  };
-
-  // Calculate percentage change
-  const calculatePercentChange = (current: number, previous: number): number => {
-    if (previous === 0) return 0
-    return ((current - previous) / previous) * 100
+    return Math.round(value).toString()
   }
 
-  // Add this utility function for normalizing university names
-  const normalizeUniversityName = (name: string): string => {
-    // Convert to lowercase and remove 'the' prefix
-    let normalized = name.toLowerCase().trim();
-    if (normalized.startsWith('the ')) {
-      normalized = normalized.substring(4);
-    }
-    // Remove spaces and other special characters
-    return normalized.replace(/\s+/g, '');
-  };
+  // Get unique customers and projects - memoized
+  const customers = useMemo(() => {
+    if (!projectData || projectData.length === 0) return []
+    return [...new Set(projectData.map(item => item["Customer Name"]))].sort()
+  }, [projectData])
+  
+  const projects = useMemo(() => {
+    if (!projectData || projectData.length === 0) return []
+    return [...new Set(projectData.map(item => item["Project"]))].sort()
+  }, [projectData])
+  
+  const resources = useMemo(() => {
+    if (!projectData || projectData.length === 0) return []
+    return [...new Set(projectData.map(item => item["Resource Name"]))].sort()
+  }, [projectData])
 
-  // Fetch and process both datasets
+  // Filter project data based on selections - memoized
+  const filteredProjectData = useMemo(() => {
+    if (!projectData || projectData.length === 0) return []
+    return projectData.filter(item => {
+      const customerMatch = selectedCustomers.includes("all") || selectedCustomers.includes(item["Customer Name"])
+      const projectMatch = selectedProjects.includes("all") || selectedProjects.includes(item["Project"])
+      const resourceMatch = selectedResources.includes("all") || selectedResources.includes(item["Resource Name"])
+      const dateMatch = item["Worked Date"] >= selectedDateRange.start && item["Worked Date"] <= selectedDateRange.end
+      
+      return customerMatch && projectMatch && resourceMatch && dateMatch
+    })
+  }, [projectData, selectedCustomers, selectedProjects, selectedResources, selectedDateRange])
+
+  // Get revenue by month - memoized
+  const getRevenueByMonth = useCallback(() => {
+    const monthlyRevenue: Record<string, number> = {}
+    
+    filteredProjectData.forEach(item => {
+      const date = new Date(item["Worked Date"])
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`
+      
+      if (!monthlyRevenue[monthKey]) {
+        monthlyRevenue[monthKey] = 0
+      }
+      monthlyRevenue[monthKey] += item["Extended Price"]
+    })
+
+    return Object.entries(monthlyRevenue)
+      .map(([month, revenue]) => ({ month, revenue }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+  }, [filteredProjectData])
+
+  // Get revenue by customer - memoized
+  const getRevenueByCustomer = useCallback(() => {
+    const customerRevenue: Record<string, number> = {}
+    
+    filteredProjectData.forEach(item => {
+      const customer = item["Customer Name"]
+      if (!customerRevenue[customer]) {
+        customerRevenue[customer] = 0
+      }
+      customerRevenue[customer] += item["Extended Price"]
+    })
+
+    return Object.entries(customerRevenue)
+      .map(([customer, revenue]) => ({ customer, revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+  }, [filteredProjectData])
+
+  // Get revenue by project - memoized
+  const getRevenueByProject = useCallback(() => {
+    const projectRevenue: Record<string, number> = {}
+    
+    filteredProjectData.forEach(item => {
+      const project = item["Project"]
+      if (!projectRevenue[project]) {
+        projectRevenue[project] = 0
+      }
+      projectRevenue[project] += item["Extended Price"]
+    })
+
+    return Object.entries(projectRevenue)
+      .map(([project, revenue]) => ({ project, revenue }))
+      .sort((a, b) => b.revenue - a.revenue)
+  }, [filteredProjectData])
+
+  // Get hours by resource - memoized
+  const getHoursByResource = useCallback(() => {
+    const resourceHours: Record<string, number> = {}
+    
+    filteredProjectData.forEach(item => {
+      const resource = item["Resource Name"]
+      if (!resourceHours[resource]) {
+        resourceHours[resource] = 0
+      }
+      resourceHours[resource] += item["Billable Hours"]
+    })
+
+    return Object.entries(resourceHours)
+      .map(([resource, hours]) => ({ resource, hours }))
+      .sort((a, b) => b.hours - a.hours)
+  }, [filteredProjectData])
+
+  // Load data from API
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true)
         
-        // Fetch financial data from the Flask API
-        const financialResponse = await fetch('http://localhost:5000/api/financial-data')
-        if (!financialResponse.ok) {
-          throw new Error(`HTTP error! Status: ${financialResponse.status}`)
+        // Fetch project data
+        const [dataResponse, statsResponse] = await Promise.all([
+          fetch('http://localhost:5000/api/project-data'),
+          fetch('http://localhost:5000/api/project-stats')
+        ])
+        
+        if (!dataResponse.ok || !statsResponse.ok) {
+          throw new Error('Failed to fetch project data')
         }
         
-        const financialDataResult = await financialResponse.json()
-        setFinancialData(financialDataResult)
+        const dataResult = await dataResponse.json()
+        const statsResult = await statsResponse.json()
         
-        // Process the financial data for charts
-        const processedFinancial = Object.values(financialDataResult).map((item: any) => {
-          // Normalize university name
-          const normalizedUniversityName = normalizeUniversityName(item.university);
-          
-          // Ensure all fields have at least a 0 value if missing
-          return {
-            ...item,
-            university: normalizedUniversityName, // Use normalized name
-            year: item.fiscal_year,
-            // Ensure all required fields have values
-            faculty_salaries: item.faculty_salaries || 0,
-            learning_expenses: item.learning_expenses || 0,
-            research_expenses: item.research_expenses || 0,
-            utilities_expenses: item.utilities_expenses || 0,
-            community_engagement_expenses: item.community_engagement_expenses || 0,
-            // The total_revenue and total_expenses are now directly in the JSON
-            // but we can also calculate them if needed
-            total_revenue: item.total_revenue || (
-              item.government_grants + 
-              item.tuition_fees + 
-              item.sales_and_services +
-              item.non_government_grants_and_donations + 
-              item.investment_income
-            ),
-            total_expenses: item.total_expenses || item.total_operational_costs,
-            normalizedUniversity: normalizedUniversityName.toLowerCase().replace(/\s+/g, '')
-          };
-        });
+        // Flask API returns array directly, not in .data property
+        setProjectData(Array.isArray(dataResult) ? dataResult : [])
+        setProjectStats(statsResult)
         
-        setProcessedFinancialData(processedFinancial)
-
-        // Fetch enrollment data from the Flask API
-        const enrollmentResponse = await fetch('http://localhost:5000/api/enrollment-data')
-        if (!enrollmentResponse.ok) {
-          throw new Error(`HTTP error! Status: ${enrollmentResponse.status}`)
-        }
-        
-        const enrollmentDataResult = await enrollmentResponse.json()
-        setEnrollmentData(enrollmentDataResult)
-        
-        // Process the enrollment data for charts
-        const processedEnrollment = Object.values(enrollmentDataResult).map((item: any) => {
-          // Normalize university name
-          const normalizedUniversityName = normalizeUniversityName(item.university);
-          
-          return {
-            ...item,
-            university: normalizedUniversityName, // Use normalized name
-            year: item.academic_year,
-            // Ensure all required fields have values
-            total_enrollment_headcount: item.total_enrollment_headcount || 0,
-            domestic_students_headcount: item.domestic_students_headcount || 0,
-            international_students_headcount: item.international_students_headcount || 0,
-            indigenous_students_headcount: item.indigenous_students_headcount || 0,
-            completion_rate_undergraduate: item.completion_rate_undergraduate || 0,
-            completion_rate_master: item.completion_rate_master || 0,
-            completion_rate_phd: item.completion_rate_phd || 0,
-            normalizedUniversity: normalizedUniversityName.toLowerCase().replace(/\s+/g, '')
-          };
-        });
-        
-        setProcessedEnrollmentData(processedEnrollment)
-        
-        setLoading(false)
       } catch (error) {
-        console.error("Error fetching data:", error)
+        console.error('Error loading project data:', error)
+        // Set empty data on error
+        setProjectData([])
+        setProjectStats(null)
+      } finally {
         setLoading(false)
       }
     }
-    
+
     loadData()
   }, [])
 
-  // Filter financial data based on selections
-  const filteredFinancialData = processedFinancialData.filter((item) => {
-    // If "all" is included in selections, don't filter by that criteria
-    const filterByUniversity = !selectedUniversities.includes("all");
-    const filterByYear = !selectedYears.includes("all");
-    
-    // Apply filters based on selections
-    if (filterByUniversity && !selectedUniversities.includes(item.university)) return false;
-    if (filterByYear && !selectedYears.includes(item.fiscal_year.toString())) return false;
-    
-    return true;
-  });
-
-  // Filter enrollment data based on selections
-  const filteredEnrollmentData = processedEnrollmentData.filter((item) => {
-    // If "all" is included in selections, don't filter by that criteria
-    const filterByUniversity = !selectedUniversities.includes("all");
-    const filterByYear = !selectedYears.includes("all");
-    
-    // Apply filters based on selections
-    if (filterByUniversity && !selectedUniversities.includes(item.university)) return false;
-    if (filterByYear && !selectedYears.includes(item.academic_year.toString())) return false;
-    
-    return true;
-  });
-
-  // Get unique universities and years for filters
-  const universities = [...new Set([
-    ...processedFinancialData.map((item) => item.university),
-    ...processedEnrollmentData.map((item) => item.university)
-  ])]
-
-  // Years specific to each dataset
-  const financialYears = [...new Set(processedFinancialData.map((item) => item.fiscal_year))].sort((a, b) => b - a);
-  const enrollmentYears = [...new Set(processedEnrollmentData.map((item) => item.academic_year))].sort((a, b) => b - a);
-
-  // Common years across all datasets (for overview dashboard)
-  const years = financialYears.filter(year => enrollmentYears.includes(year)).sort((a, b) => b - a);
-
-  // Calculate KPI metrics
-  const calculateKPIs = () => {
-    if (filteredFinancialData.length === 0) return null
-
-    // Get the most recent year's data for each university
-    const latestData: Record<string, any[]> = {}
-
-    processedFinancialData.forEach((item) => {
-      if (!latestData[item.university]) {
-        latestData[item.university] = []
-      }
-      latestData[item.university].push(item)
-    })
-
-    // Sort by year and get the latest
-    Object.keys(latestData).forEach((uni) => {
-      latestData[uni].sort((a, b) => b.fiscal_year - a.fiscal_year)
-    })
-
-    // If specific universities are selected (not "all")
-    if (!selectedUniversities.includes("all")) {
-      // For multiple selected universities, aggregate their data
-      const selectedUnisData = selectedUniversities.flatMap(uni => latestData[uni] || []);
-      if (selectedUnisData.length < 2) return null;
-
-      // Group by year for aggregation
-      const dataByYear: Record<number, any[]> = {};
-      selectedUnisData.forEach(item => {
-        if (!dataByYear[item.fiscal_year]) {
-          dataByYear[item.fiscal_year] = [];
-        }
-        dataByYear[item.fiscal_year].push(item);
-      });
-
-      // Get the two most recent years
-      const yearsList = Object.keys(dataByYear).map(Number).sort((a, b) => b - a);
-      const currentYear = yearsList[0];
-      const previousYear = yearsList[1];
-
-      if (!currentYear || !previousYear) return null;
-
-      // Aggregate current year data
-      const currentYearData = dataByYear[currentYear];
-      const currentNetAssets = currentYearData.reduce((sum, item) => sum + item.net_assets, 0);
-      const currentTuitionFees = currentYearData.reduce((sum, item) => sum + item.tuition_fees, 0);
-      const currentGovGrants = currentYearData.reduce((sum, item) => sum + item.government_grants, 0);
-
-      // Aggregate previous year data
-      const previousYearData = dataByYear[previousYear];
-      const previousNetAssets = previousYearData.reduce((sum, item) => sum + item.net_assets, 0);
-      const previousTuitionFees = previousYearData.reduce((sum, item) => sum + item.tuition_fees, 0);
-      const previousGovGrants = previousYearData.reduce((sum, item) => sum + item.government_grants, 0);
-
-      return {
-        financial_stability: {
-          value: currentNetAssets,
-          change: calculatePercentChange(currentNetAssets, previousNetAssets),
-        },
-        enrollment_domestic: {
-          value: currentTuitionFees * 0.6, // Simulated domestic portion
-          change: calculatePercentChange(currentTuitionFees * 0.6, previousTuitionFees * 0.6),
-        },
-        enrollment_intl: {
-          value: currentTuitionFees * 0.4, // Simulated international portion
-          change: calculatePercentChange(currentTuitionFees * 0.4, previousTuitionFees * 0.4),
-        },
-        government_funding: {
-          value: currentGovGrants,
-          change: calculatePercentChange(currentGovGrants, previousGovGrants),
-        },
-      };
-    }
-
-    // If all universities are selected, aggregate the data
-    // First, determine the appropriate years array to use based on selected years
-    const relevantYears = selectedYears.includes("all") ? years : 
-      financialYears.filter(year => selectedYears.includes(year.toString())).sort((a, b) => b - a);
-      
-    if (relevantYears.length < 2) return null;
-    
-    const currentYear = relevantYears[0];
-    const previousYear = relevantYears[1];
-
-    const aggregatedCurrent = processedFinancialData
-      .filter((item) => item.fiscal_year === currentYear)
-      .reduce(
-        (acc, item) => {
-          acc.net_assets += item.net_assets
-          acc.tuition_fees += item.tuition_fees
-          acc.government_grants += item.government_grants
-          return acc
-        },
-        { net_assets: 0, tuition_fees: 0, government_grants: 0 },
-      )
-
-    const aggregatedPrevious = processedFinancialData
-      .filter((item) => item.fiscal_year === previousYear)
-      .reduce(
-        (acc, item) => {
-          acc.net_assets += item.net_assets
-          acc.tuition_fees += item.tuition_fees
-          acc.government_grants += item.government_grants
-          return acc
-        },
-        { net_assets: 0, tuition_fees: 0, government_grants: 0 },
-      )
-
-    return {
-      financial_stability: {
-        value: aggregatedCurrent.net_assets,
-        change: calculatePercentChange(aggregatedCurrent.net_assets, aggregatedPrevious.net_assets),
-      },
-      enrollment_domestic: {
-        value: aggregatedCurrent.tuition_fees * 0.6, // Simulated domestic portion
-        change: calculatePercentChange(aggregatedCurrent.tuition_fees * 0.6, aggregatedPrevious.tuition_fees * 0.6),
-      },
-      enrollment_intl: {
-        value: aggregatedCurrent.tuition_fees * 0.4, // Simulated international portion
-        change: calculatePercentChange(aggregatedCurrent.tuition_fees * 0.4, aggregatedPrevious.tuition_fees * 0.4),
-      },
-      government_funding: {
-        value: aggregatedCurrent.government_grants,
-        change: calculatePercentChange(aggregatedCurrent.government_grants, aggregatedPrevious.government_grants),
-      },
-    }
-  }
-
-  const kpis = calculateKPIs()
-
   const value = {
-    financialData,
-    enrollmentData,
-    processedFinancialData,
-    processedEnrollmentData,
-    selectedUniversities,
-    setSelectedUniversities,
-    selectedYears,
-    setSelectedYears,
-    selectedMetric,
-    setSelectedMetric,
+    projectData,
+    projectStats,
+    selectedCustomers,
+    setSelectedCustomers,
+    selectedProjects,
+    setSelectedProjects,
+    selectedResources,
+    setSelectedResources,
+    selectedDateRange,
+    setSelectedDateRange,
     loading,
-    universities,
-    years,
-    financialYears,
-    enrollmentYears,
-    kpis,
-    calculateKPIs,
-    filteredFinancialData,
-    filteredEnrollmentData,
+    customers,
+    projects,
+    resources,
+    filteredProjectData,
     formatCurrency,
     formatNumber,
+    getRevenueByMonth,
+    getRevenueByCustomer,
+    getRevenueByProject,
+    getHoursByResource,
   }
 
   return (

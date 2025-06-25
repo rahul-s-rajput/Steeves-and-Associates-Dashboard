@@ -2,163 +2,193 @@
 
 import { MultiSelect } from "@/components/ui/multi-select"
 import { useState } from "react"
+import { useDashboard } from "../../context/DashboardContext"
 
 interface FilterBarProps {
-  selectedUniversities: string[]
-  setSelectedUniversities: (universities: string[]) => void
-  selectedYears: string[]
-  setSelectedYears: (years: string[]) => void
-  universities: string[]
-  years: number[]
+  selectedCustomers: string[]
+  setSelectedCustomers: (customers: string[]) => void
+  selectedProjects: string[]
+  setSelectedProjects: (projects: string[]) => void
+  selectedResources: string[]
+  setSelectedResources: (resources: string[]) => void
+  customers: string[]
+  projects: string[]
+  resources: string[]
   activeTab: string
+  selectedDateRange: { start: string; end: string }
+  setSelectedDateRange: (range: { start: string; end: string }) => void
 }
 
 export default function FilterBar({
-  selectedUniversities,
-  setSelectedUniversities,
-  selectedYears,
-  setSelectedYears,
-  universities,
-  years,
+  selectedCustomers,
+  setSelectedCustomers,
+  selectedProjects,
+  setSelectedProjects,
+  selectedResources,
+  setSelectedResources,
+  customers,
+  projects,
+  resources,
   activeTab,
+  selectedDateRange,
+  setSelectedDateRange,
 }: FilterBarProps) {
-  // Add state for university type filters
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(["all"]);
-
-  // Define university types
-  const universityTypes = [
-    { value: "all", label: "All Types" },
-    { value: "public", label: "Public Universities" },
-    { value: "community", label: "Community Colleges" },
-    { value: "polytechnic", label: "Polytechnic Colleges" },
-    { value: "fourYear", label: "4-Year Schools" },
-    { value: "research", label: "Research Universities" }
-  ];
-
-  let title = "Overview"
+  let title = "Project Dashboard"
   
   switch(activeTab) {
-    case "financials":
-      title = "Financials"
+    case "dashboard":
+      title = "Project Revenue Dashboard"
       break
-    case "enrollment":
-      title = "Enrollment"
+    case "seasonal-analysis":
+      title = "Seasonal Analysis Dashboard"
       break
-    case "operational-costs":
-      title = "Operational Costs"
+    case "growth-drivers":
+      title = "Growth Drivers Dashboard"
       break
-    case "program-curriculum":
-      title = "Program/Curriculum"
+    case "resource-performance":
+      title = "Resource Performance Dashboard"
+      break
+    case "project-analytics":
+      title = "Project Analytics Dashboard"
+      break
+    case "forecasting":
+      title = "Forecasting Dashboard"
+      break
+    case "chatbot":
+      title = "Chatbot"
+      break
+    default:
+      title = "Project Dashboard"
       break
   }
 
-  // Handle university selection
-  const handleUniversityChange = (values: string[]) => {
-    // If "all" is selected along with other options, just keep "all"
+  // Handle customer selection
+  const handleCustomerChange = (values: string[]) => {
     if (values.includes("all") && values.length > 1) {
-      if (selectedUniversities.includes("all")) {
-        // If "all" was already selected, user wants to select specific unis
-        setSelectedUniversities(values.filter(v => v !== "all"));
+      if (selectedCustomers.includes("all")) {
+        setSelectedCustomers(values.filter(v => v !== "all"))
       } else {
-        // User just selected "all", so set to only "all"
-        setSelectedUniversities(["all"]);
+        setSelectedCustomers(["all"])
       }
     } else if (values.length === 0) {
-      // If nothing is selected, default to "all"
-      setSelectedUniversities(["all"]);
+      setSelectedCustomers(["all"])
     } else {
-      setSelectedUniversities(values);
+      setSelectedCustomers(values)
     }
-  };
+  }
 
-  // Handle year selection
-  const handleYearChange = (values: string[]) => {
-    // If "all" is selected along with other options, just keep "all"
+  // Handle project selection
+  const handleProjectChange = (values: string[]) => {
     if (values.includes("all") && values.length > 1) {
-      if (selectedYears.includes("all")) {
-        // If "all" was already selected, user wants to select specific years
-        setSelectedYears(values.filter(v => v !== "all"));
+      if (selectedProjects.includes("all")) {
+        setSelectedProjects(values.filter(v => v !== "all"))
       } else {
-        // User just selected "all", so set to only "all"
-        setSelectedYears(["all"]);
+        setSelectedProjects(["all"])
       }
     } else if (values.length === 0) {
-      // If nothing is selected, default to "all"
-      setSelectedYears(["all"]);
+      setSelectedProjects(["all"])
     } else {
-      setSelectedYears(values);
+      setSelectedProjects(values)
     }
-  };
+  }
 
-  // Handle university type selection
-  const handleTypeChange = (values: string[]) => {
-    // If "all" is selected along with other options, just keep "all"
+  // Handle resource selection
+  const handleResourceChange = (values: string[]) => {
     if (values.includes("all") && values.length > 1) {
-      if (selectedTypes.includes("all")) {
-        // If "all" was already selected, user wants to select specific types
-        setSelectedTypes(values.filter(v => v !== "all"));
+      if (selectedResources.includes("all")) {
+        setSelectedResources(values.filter(v => v !== "all"))
       } else {
-        // User just selected "all", so set to only "all"
-        setSelectedTypes(["all"]);
+        setSelectedResources(["all"])
       }
     } else if (values.length === 0) {
-      // If nothing is selected, default to "all"
-      setSelectedTypes(["all"]);
+      setSelectedResources(["all"])
     } else {
-      setSelectedTypes(values);
+      setSelectedResources(values)
     }
-  };
+  }
+
+  // Handle date range changes
+  const handleStartDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedDateRange({
+      ...selectedDateRange,
+      start: event.target.value
+    })
+  }
+
+  const handleEndDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedDateRange({
+      ...selectedDateRange,
+      end: event.target.value
+    })
+  }
 
   // Format display text for selections
-  const getUniversityDisplayText = () => {
-    if (selectedUniversities.includes("all")) return "All Universities";
-    if (selectedUniversities.length === 1) return selectedUniversities[0];
-    return `${selectedUniversities.length} Universities Selected`;
-  };
+  const getCustomerDisplayText = () => {
+    if (selectedCustomers.includes("all")) return "All Customers"
+    if (selectedCustomers.length === 1) return selectedCustomers[0]
+    return `${selectedCustomers.length} Customers Selected`
+  }
 
-  const getYearDisplayText = () => {
-    if (selectedYears.includes("all")) return "All Years";
-    if (selectedYears.length === 1) return selectedYears[0];
-    return `${selectedYears.length} Years Selected`;
-  };
+  const getProjectDisplayText = () => {
+    if (selectedProjects.includes("all")) return "All Projects"
+    if (selectedProjects.length === 1) return selectedProjects[0]
+    return `${selectedProjects.length} Projects Selected`
+  }
 
-  const getTypeDisplayText = () => {
-    if (selectedTypes.includes("all")) return "All Types";
-    if (selectedTypes.length === 1) {
-      const typeObj = universityTypes.find(t => t.value === selectedTypes[0]);
-      return typeObj ? typeObj.label : selectedTypes[0];
-    }
-    return `${selectedTypes.length} Types Selected`;
-  };
+  const getResourceDisplayText = () => {
+    if (selectedResources.includes("all")) return "All Resources"
+    if (selectedResources.length === 1) return selectedResources[0]
+    return `${selectedResources.length} Resources Selected`
+  }
 
   return (
     <div className="mb-4">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-xl font-semibold">{title}</h1>
+        {/* <h1 className="text-xl font-semibold">{title}</h1> */}
         <div className="flex items-center gap-4">
           <MultiSelect
-            options={[{ value: "all", label: "All Universities" }, ...universities.map(uni => ({ value: uni, label: uni }))]}
-            selectedValues={selectedUniversities}
-            onChange={handleUniversityChange}
-            placeholder="Select Universities"
-            displayText={getUniversityDisplayText()}
+            options={[{ value: "all", label: "All Customers" }, ...customers.map(customer => ({ value: customer, label: customer }))]}
+            selectedValues={selectedCustomers}
+            onChange={handleCustomerChange}
+            placeholder="Select Customers"
+            displayText={getCustomerDisplayText()}
           />
 
           <MultiSelect
-            options={[{ value: "all", label: "All Years" }, ...years.map(year => ({ value: year.toString(), label: year.toString() }))]}
-            selectedValues={selectedYears}
-            onChange={handleYearChange}
-            placeholder="Select Years"
-            displayText={getYearDisplayText()}
+            options={[{ value: "all", label: "All Projects" }, ...projects.map(project => ({ value: project, label: project }))]}
+            selectedValues={selectedProjects}
+            onChange={handleProjectChange}
+            placeholder="Select Projects"
+            displayText={getProjectDisplayText()}
           />
 
           <MultiSelect
-            options={universityTypes}
-            selectedValues={selectedTypes}
-            onChange={handleTypeChange}
-            placeholder="Select Types"
-            displayText={getTypeDisplayText()}
+            options={[{ value: "all", label: "All Resources" }, ...resources.map(resource => ({ value: resource, label: resource }))]}
+            selectedValues={selectedResources}
+            onChange={handleResourceChange}
+            placeholder="Select Resources"
+            displayText={getResourceDisplayText()}
           />
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">From:</label>
+            <input
+              type="date"
+              value={selectedDateRange.start}
+              onChange={handleStartDateChange}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">To:</label>
+            <input
+              type="date"
+              value={selectedDateRange.end}
+              onChange={handleEndDateChange}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
       </div>
     </div>

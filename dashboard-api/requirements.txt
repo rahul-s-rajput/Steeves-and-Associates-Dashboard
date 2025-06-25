@@ -1,0 +1,54 @@
+# Flask API Dependencies with SQL Support
+flask==3.0.3
+flask-cors==4.0.1
+werkzeug==3.0.4
+
+# Database Dependencies
+psycopg2-binary==2.9.9
+
+# Data Processing Dependencies - COMPATIBLE VERSIONS
+pandas==2.2.3
+numpy==1.26.4
+statsmodels==0.14.2
+
+# Environment and Configuration
+python-dotenv==1.0.1
+
+# Production Server
+gunicorn==23.0.0
+
+# AI/ML Dependencies (existing from your original requirements)
+openai>=1.68.2
+tenacity>=8.1.0
+langchain>=0.3.21
+pydantic>=2.5.2
+sentence-transformers==3.3.1
+huggingface-hub==0.26.5
+langchain-community>=0.3.20
+langchain-openai>=0.3.10
+crawl4ai>=0.3.7
+
+# Core LightRAG and AI dependencies
+lightrag-hku[api]>=0.1.0
+google-generativeai>=0.8.0
+
+# AI Model APIs
+mistralai>=1.0.0
+
+# Web framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+jinja2>=3.1.0
+
+# Data processing
+aiofiles>=23.0.0
+
+# Utilities
+python-multipart>=0.0.6
+asyncio-throttle>=1.0.0
+
+# Optional: For enhanced functionality
+aiohttp>=3.8.0
+asyncpg>=0.28.0
+tiktoken>=0.5.0
+

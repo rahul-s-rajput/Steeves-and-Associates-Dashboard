@@ -5,12 +5,16 @@ const API_BASE_URL = 'http://127.0.0.1:5000';
 // Handler for POST requests to index reports
 export async function POST(request: NextRequest) {
   try {
+    // Get the request body
+    const body = await request.json().catch(() => ({}));
+    
     // Forward the request to the Flask backend
     const response = await fetch(`${API_BASE_URL}/api/chat/index-reports`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify(body),
     });
     
     if (!response.ok) {

@@ -3,50 +3,41 @@
 import { ReactNode, useState } from "react"
 import Sidebar from "./Sidebar"
 import FilterBar from "./FilterBar"
-import NewsSidebar from "./NewsSidebar"
 import { useDashboard } from "../../context/DashboardContext"
 
 interface DashboardLayoutProps {
   children: ReactNode
-  selectedUniversities: string[]
-  setSelectedUniversities: (universities: string[]) => void
-  selectedYears: string[]
-  setSelectedYears: (years: string[]) => void
+  selectedCustomers: string[]
+  setSelectedCustomers: (customers: string[]) => void
+  selectedProjects: string[]
+  setSelectedProjects: (projects: string[]) => void
+  selectedResources: string[]
+  setSelectedResources: (resources: string[]) => void
   activeTab: string
-  universities: string[]
-  years: number[]
+  customers: string[]
+  projects: string[]
+  resources: string[]
   loading?: boolean
   kpis?: any
 }
 
 export default function DashboardLayout({
   children,
-  selectedUniversities,
-  setSelectedUniversities,
-  selectedYears,
-  setSelectedYears,
+  selectedCustomers,
+  setSelectedCustomers,
+  selectedProjects,
+  setSelectedProjects,
+  selectedResources,
+  setSelectedResources,
   activeTab,
-  universities,
-  years,
+  customers,
+  projects,
+  resources,
   loading,
   kpis,
 }: DashboardLayoutProps) {
   const [sidebarTab, setSidebarTab] = useState("dashboard")
-  const { financialYears, enrollmentYears } = useDashboard()
-  
-  // Determine which years to show based on the active tab
-  const getFilterYears = () => {
-    switch(activeTab) {
-      case "financials":
-      case "operational-costs":
-        return financialYears // Use financial years for finance-related dashboards
-      case "enrollment":
-      case "program-curriculum":
-        return enrollmentYears // Use enrollment years for education-related dashboards
-      default:
-        return years // Use common years for overview dashboard
-    }
-  }
+  const { selectedDateRange, setSelectedDateRange } = useDashboard()
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
@@ -64,24 +55,24 @@ export default function DashboardLayout({
             <div className="p-4">
               {activeTab !== "chatbot" && (
                 <FilterBar
-                  selectedUniversities={selectedUniversities}
-                  setSelectedUniversities={setSelectedUniversities}
-                  selectedYears={selectedYears}
-                  setSelectedYears={setSelectedYears}
-                  universities={universities}
-                  years={getFilterYears()}
+                  selectedCustomers={selectedCustomers}
+                  setSelectedCustomers={setSelectedCustomers}
+                  selectedProjects={selectedProjects}
+                  setSelectedProjects={setSelectedProjects}
+                  selectedResources={selectedResources}
+                  setSelectedResources={setSelectedResources}
+                  customers={customers}
+                  projects={projects}
+                  resources={resources}
                   activeTab={activeTab}
+                  selectedDateRange={selectedDateRange}
+                  setSelectedDateRange={setSelectedDateRange}
                 />
               )}
               
               {/* Main content (children) */}
               {children}
             </div>
-          </div>
-
-          {/* Right Sidebar - sticky */}
-          <div className="sticky top-0 h-screen">
-            <NewsSidebar universities={universities} kpis={kpis} />
           </div>
         </div>
       </div>
